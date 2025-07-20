@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Real Time Chat Application</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="split-container">
+
+        <!-- Sender Panel -->
+        <div class="panel">
+            <h1 class="logo">Sender</h1>
+            <form class="form" id="senderForm">
+                <input class="input" type="text" id="senderName" placeholder="Sender Name" required />
+                <input class="input" type="text" id="senderMessage" placeholder="Message" required />
+                <button class="button" type="submit">Send</button>
+            </form>
+            <div class="messageArea" id="senderMessages"></div>
+        </div>
+
+        <!-- Receiver Panel -->
+        <div class="panel">
+            <h1 class="logo">Receiver</h1>
+            <form class="form" id="receiverForm">
+                <input class="input" type="text" id="receiverName" placeholder="Receiver Name" required />
+                <input class="input" type="text" id="receiverMessage" placeholder="Message" required />
+                <button class="button" type="submit">Reply</button>
+            </form>
+            <div class="messageArea" id="receiverMessages"></div>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Sender
+        const senderForm = document.getElementById('senderForm');
+        const senderName = document.getElementById('senderName');
+        const senderMessage = document.getElementById('senderMessage');
+        const senderMessages = document.getElementById('senderMessages');
+
+        // Receiver
+        const receiverForm = document.getElementById('receiverForm');
+        const receiverName = document.getElementById('receiverName');
+        const receiverMessage = document.getElementById('receiverMessage');
+        const receiverMessages = document.getElementById('receiverMessages');
+
+        // Sender sends message
+        senderForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (senderName.value && senderMessage.value) {
+                socket.emit('chat message', {
+                    name: senderName.value.trim(),
+                    message: senderMessage.value.trim()
+                });
+                senderMessage.value = '';
+            }
+        });
+
+        // Receiver replies
+        receiverForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (receiverName.value && receiverMessage.value) {
+                socket.emit('chat message', {
+                    name: receiverName.value.trim(),
+                    message: receiverMessage.value.trim()
+                });
+                receiverMessage.value = '';
+            }
+        });
+
+        // Show messages to both sides
+        socket.on('chat message', (data) => {
+            const sName = senderName.value.trim();
+            const rName = receiverName.value.trim();
+
+            // Sender Panel
+            if (sName) {
+                const sBubble = document.createElement('div');
+                sBubble.classList.add(data.name === sName ? 'sender-bubble' : 'receiver-bubble');
+                sBubble.innerHTML = `<strong>${data.name}:</strong> ${data.message}`;
+                senderMessages.appendChild(sBubble);
+                senderMessages.scrollTop = senderMessages.scrollHeight;
+            }
+
+            // Receiver Panel
+            if (rName) {
+                const rBubble = document.createElement('div');
+                rBubble.classList.add(data.name === rName ? 'sender-bubble' : 'receiver-bubble');
+                rBubble.innerHTML = `<strong>${data.name}:</strong> ${data.message}`;
+                receiverMessages.appendChild(rBubble);
+                receiverMessages.scrollTop = receiverMessages.scrollHeight;
+            }
+        });
+        window.addEventListener('beforeunload', () => {
+    senderMessages.innerHTML = '';
+    receiverMessages.innerHTML = '';
+});
+    </script>
+</body>
+
+</html>
